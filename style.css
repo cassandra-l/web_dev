@@ -202,6 +202,7 @@ ul {
 
 .fact-form input:first-child {
   flex-grow: 1;
+  max-width: none;
 }
 
 .fact-form span {
@@ -222,5 +223,6 @@ ul {
   .fact-form input,
   .fact-form select {
     width: auto;
+    max-width: none;
   }
 }
