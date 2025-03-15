@@ -8,7 +8,7 @@ body {
   background-color: #292524;
   color: #fafaf9;
   font-family: "Sono", sans-serif;
-  padding: 48px 64px;
+  padding: 48px 64px 0px;
 }
 
 .hidden {
@@ -23,11 +23,18 @@ body {
   margin-top: 24px;
 }
 
+.disputed {
+  color: #ef4444;
+  font-weight: 600;
+  margin-right: 10px;
+}
+
 /* MAIN LAYOUT */
-.container {
+#root {
   max-width: 1500px;
   margin: 0 auto;
 }
+
 .header {
   margin-bottom: 40px;
   display: flex;
@@ -39,6 +46,7 @@ body {
   display: grid;
   grid-template-columns: 250px 1fr;
   gap: 48px;
+  height: calc(100vh-48px-68px-40px);
 }
 
 @media (max-width: 900px) {
@@ -46,6 +54,11 @@ body {
     /* only want 1 column to occupy the entire space (horizontally) */
     grid-template-columns: 1fr;
   }
+}
+
+section {
+  overflow: scroll;
+  padding-bottom: 40px;
 }
 
 /* ELEMENT */
@@ -230,7 +243,7 @@ ul {
 
 @media (max-width: 1000px) {
   body {
-    padding: 32px 48px;
+    /* padding: 32px 48px; */
   }
 
   .fact-form {
