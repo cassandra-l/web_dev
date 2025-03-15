@@ -3,7 +3,8 @@
 // then followed by style.css since we imported it here
 // css file is in the src folder because the code will be included into the application
 import "./style.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import supabase from "./supabase";
 
 const initialFacts = [
   {
@@ -14,7 +15,7 @@ const initialFacts = [
     votesInteresting: 24,
     votesMindblowing: 9,
     votesFalse: 4,
-    createdIn: 2021
+    createdIn: 2021,
   },
   {
     id: 2,
@@ -25,7 +26,7 @@ const initialFacts = [
     votesInteresting: 11,
     votesMindblowing: 2,
     votesFalse: 0,
-    createdIn: 2019
+    createdIn: 2019,
   },
   {
     id: 3,
@@ -35,8 +36,8 @@ const initialFacts = [
     votesInteresting: 8,
     votesMindblowing: 3,
     votesFalse: 1,
-    createdIn: 2015
-  }
+    createdIn: 2015,
+  },
 ];
 
 function Counter() {
@@ -56,7 +57,38 @@ function App() {
   // use state return two things: the current state and the function to update the state
   // 1. Define state variable
   const [showForm, setShowForm] = useState(false);
-  const [facts, setFacts] = useState(initialFacts);
+  const [facts, setFacts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState("all");
+
+  useEffect(
+    function () {
+      // await can only be used in async function
+      async function getFacts() {
+        setIsLoading(true);
+
+        let query = supabase.from("facts").select("*");
+
+        if (currentCategory !== "all")
+          query = query.eq("category", currentCategory);
+
+        // await = make code pause until data arrives
+        const { data: facts, error } = await query
+          // sort facts according to votecounts and limit the number of facts fetch to 1000
+          .order("votesInteresting", { ascending: false })
+          .limit(1000);
+
+        if (!error) setFacts(facts);
+        else alert("There was a problem getting data");
+        setIsLoading(false);
+      }
+      getFacts();
+      // only wants the application to fetch data once
+      // not everytime it re-renders, hence we put []
+      // if not, data will re-renders everytime we click on something
+    },
+    [currentCategory]
+  );
 
   // whatever return will be shown in the user interface
   // can only run one component in one return
@@ -70,11 +102,15 @@ function App() {
         <NewFactForm setFacts={setFacts} setShowForm={setShowForm} />
       ) : null}
       <main className="main">
-        <CategoryFilter />
-        <FactList facts={facts} />
+        <CategoryFilter setCurrentCategory={setCurrentCategory} />
+        {isLoading ? <Loader /> : <FactList facts={facts} />}
       </main>
     </>
   );
+}
+
+function Loader() {
+  return <p className="message">Loading...</p>;
 }
 
 // {setShowForm} is destructing
@@ -112,7 +148,7 @@ const CATEGORIES = [
   { name: "entertainment", color: "#db2777" },
   { name: "health", color: "#14b8a6" },
   { name: "history", color: "#f97316" },
-  { name: "news", color: "#8b5cf6" }
+  { name: "news", color: "#8b5cf6" },
 ];
 
 function isValidHttpurl(string) {
@@ -125,7 +161,7 @@ function isValidHttpurl(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
-function NewFactForm({ setFacts }) {
+function NewFactForm({ setFacts, setShowForm }) {
   const [text, setText] = useState("");
   const [source, setSource] = useState("http://example.com");
   const [category, setCategory] = useState("");
@@ -147,7 +183,7 @@ function NewFactForm({ setFacts }) {
         votesInteresting: 0,
         votesMindblowing: 0,
         votesFalse: 0,
-        createdIn: new Date().getFullYear()
+        createdIn: new Date().getFullYear(),
       };
 
       // Add the new fact to the UI; add the fact to state
@@ -157,7 +193,7 @@ function NewFactForm({ setFacts }) {
       setSource("");
       setCategory("");
       // Close the form
-      // setShowForm(false)
+      setShowForm(false);
     }
   }
   return (
@@ -191,19 +227,25 @@ function NewFactForm({ setFacts }) {
   );
 }
 
-function CategoryFilter() {
+function CategoryFilter({ setCurrentCategory }) {
   return (
     <aside>
       <ul>
         <li class="category">
-          <button className="btn btn-all-categories">All</button>
+          <button
+            className="btn btn-all-categories"
+            onClick={() => setCurrentCategory("all")}
+          >
+            All
+          </button>
         </li>
 
         {CATEGORIES.map((cat) => (
-          <li className="category">
+          <li key={cat.name} className="category">
             <button
               className="btn btn-category"
               style={{ backgroundColor: cat.color }}
+              onClick={() => setCurrentCategory(cat.name)}
             >
               {cat.name}
             </button>
@@ -215,6 +257,14 @@ function CategoryFilter() {
 }
 
 function FactList({ facts }) {
+  if (facts.length === 0) {
+    return (
+      <p className="message">
+        No facts for this category yet! Create the first one
+      </p>
+    );
+  }
+
   return (
     <section>
       <ul className="facts-list">
@@ -246,7 +296,7 @@ function Fact({ fact }) {
         className="tag"
         style={{
           backgroundColor: CATEGORIES.find((cat) => cat.name === fact.category)
-            .color
+            .color,
         }}
       >
         {fact.category}
