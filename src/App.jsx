@@ -103,7 +103,11 @@ function App() {
       ) : null}
       <main className="main">
         <CategoryFilter setCurrentCategory={setCurrentCategory} />
-        {isLoading ? <Loader /> : <FactList facts={facts} />}
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <FactList facts={facts} setFacts={setFacts} />
+        )}
       </main>
     </>
   );
@@ -165,7 +169,7 @@ function NewFactForm({ setFacts, setShowForm }) {
   const [text, setText] = useState("");
   const [source, setSource] = useState("http://example.com");
   const [category, setCategory] = useState("");
-  const [isUploading, setisUploading] = useSate(false);
+  const [isUploading, setisUploading] = useState(false);
   const textLength = text.length;
 
   async function handleSubmit(e) {
@@ -186,7 +190,7 @@ function NewFactForm({ setFacts, setShowForm }) {
       setisUploading(false);
 
       // Add the new fact to the UI; add the fact to state
-      setFacts((facts) => [newFact[0], ...facts]);
+      if (!error) setFacts((facts) => [newFact[0], ...facts]);
       // Reset input fields
       setText("");
       setSource("");
@@ -259,7 +263,7 @@ function CategoryFilter({ setCurrentCategory }) {
   );
 }
 
-function FactList({ facts }) {
+function FactList({ facts, setFacts }) {
   if (facts.length === 0) {
     return (
       <p className="message">
@@ -275,7 +279,7 @@ function FactList({ facts }) {
         {/* Whenever you want to insert JavaScript inside JSX, you wrap it in {}. */}
         {/* {fact} tells React: "Pass the value of fact (not a string) as a prop to Fact. */}
         {facts.map((fact) => (
-          <Fact key={fact.id} fact={fact} />
+          <Fact key={fact.id} fact={fact} setFacts={setFacts} />
         ))}
       </ul>
       <p>There are {facts.length} facts in the databse. Add your own!</p>
@@ -286,7 +290,28 @@ function FactList({ facts }) {
 // same as function Fact(props) {
 //   const fact = props.fact; // Manually extracting fact from props
 // }
-function Fact({ fact }) {
+function Fact({ fact, setFacts }) {
+  const [isUpdating, setisUpdating] = useState(false);
+
+  async function handleVote(columnName) {
+    setisUpdating(true);
+    // update the votes of the fact that has id equal to fact.id
+    // have query in place, so we need an await
+    const { data: updatedFact, error } = await supabase
+      .from("facts")
+      .update({ [columnName]: fact[columnName] + 1 })
+      .eq("id", fact.id)
+      // seelct this fact so we can update our local fact state
+      .select();
+    setisUpdating(false);
+
+    console.log(updatedFact);
+    if (!error)
+      setFacts((facts) =>
+        facts.map((f) => (f.id === fact.id ? updatedFact[0] : f))
+      );
+  }
+
   return (
     <li className="fact">
       <p>
@@ -305,9 +330,22 @@ function Fact({ fact }) {
         {fact.category}
       </span>
       <div className="vote-buttons">
-        <button>👍 {fact.votesInteresting}</button>
-        <button>🤯 {fact.votesMindblowing}</button>
-        <button>⛔️ {fact.votesFalse}</button>
+        {/* on click, React will call handleVote function */}
+        <button
+          onClick={() => handleVote("votesInteresting")}
+          disabled={isUpdating}
+        >
+          👍 {fact.votesInteresting}
+        </button>
+        <button
+          onClick={() => handleVote("votesMindblowing")}
+          disabled={isUpdating}
+        >
+          🤯 {fact.votesMindblowing}
+        </button>
+        <button onClick={() => handleVote("votesFalse")} disabled={isUpdating}>
+          ⛔️ {fact.votesFalse}
+        </button>
       </div>
     </li>
   );
