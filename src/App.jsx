@@ -167,7 +167,7 @@ function isValidHttpurl(string) {
 
 function NewFactForm({ setFacts, setShowForm }) {
   const [text, setText] = useState("");
-  const [source, setSource] = useState("http://example.com");
+  const [source, setSource] = useState("");
   const [category, setCategory] = useState("");
   const [isUploading, setisUploading] = useState(false);
   const textLength = text.length;
@@ -292,6 +292,8 @@ function FactList({ facts, setFacts }) {
 // }
 function Fact({ fact, setFacts }) {
   const [isUpdating, setisUpdating] = useState(false);
+  const isDisputed =
+    fact.botesInteresting + fact.votesMindblowing < fact.votesfalse;
 
   async function handleVote(columnName) {
     setisUpdating(true);
@@ -315,6 +317,7 @@ function Fact({ fact, setFacts }) {
   return (
     <li className="fact">
       <p>
+        {isDisputed ? <span className="disputed">[Disputed]</span> : null}
         {fact.text}
         <a className="source" href={fact.source} target="_blank">
           (Source)
